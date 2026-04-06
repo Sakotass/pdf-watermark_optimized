@@ -1,3 +1,4 @@
+from io import BytesIO
 from math import cos, pi, sin
 from typing import Union
 
@@ -78,7 +79,6 @@ def draw_insert_watermark(
                 f"Invalid alignment value: '{specific_options.horizontal_alignment}'."
             )
 
-        # if the image is too big, scale it down to fit in the box
         image_width, image_height = drawing_options.image.getSize()
         image_width, image_height = fit_image(
             image_width,
@@ -137,7 +137,6 @@ def draw_grid_watermark(
         start_index = 0
 
     if drawing_options.image is not None:
-        # if the image is too big, scale it down to fit in the box
         image_width, image_height = drawing_options.image.getSize()
         image_width, image_height = fit_image(
             image_width,
@@ -149,7 +148,6 @@ def draw_grid_watermark(
 
     for x_index in range(start_index, specific_options.horizontal_boxes + 1):
         for y_index in range(start_index, specific_options.vertical_boxes + 1):
-            # Coordinates to draw at in original coordinates system
             x_base = x_index * horizontal_box_spacing
             y_base = y_index * vertical_box_spacing
 
@@ -168,15 +166,13 @@ def draw_grid_watermark(
             )
 
 
-def draw_watermarks(
-    file_name: str,
+def _draw_watermarks_to_canvas(
+    watermark: canvas.Canvas,
     width: float,
     height: float,
     drawing_options: DrawingOptions,
     specific_options: Union[GridOptions, InsertOptions],
 ):
-    watermark = canvas.Canvas(file_name, pagesize=(width, height))
-
     rotation_angle_rad = drawing_options.angle * pi / 180
     rotation_matrix = np.array(
         [
@@ -201,4 +197,39 @@ def draw_watermarks(
     else:
         raise NotImplementedError("Unknown watermark type.")
 
+
+def draw_watermarks(
+    file_name: str,
+    width: float,
+    height: float,
+    drawing_options: DrawingOptions,
+    specific_options: Union[GridOptions, InsertOptions],
+):
+    watermark = canvas.Canvas(file_name, pagesize=(width, height))
+    _draw_watermarks_to_canvas(
+        watermark,
+        width,
+        height,
+        drawing_options,
+        specific_options,
+    )
     watermark.save()
+
+
+def draw_watermarks_to_bytes(
+    width: float,
+    height: float,
+    drawing_options: DrawingOptions,
+    specific_options: Union[GridOptions, InsertOptions],
+) -> bytes:
+    buffer = BytesIO()
+    watermark = canvas.Canvas(buffer, pagesize=(width, height))
+    _draw_watermarks_to_canvas(
+        watermark,
+        width,
+        height,
+        drawing_options,
+        specific_options,
+    )
+    watermark.save()
+    return buffer.getvalue()
