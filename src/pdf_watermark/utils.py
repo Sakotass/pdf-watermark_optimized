@@ -3,8 +3,6 @@ from typing import List, Tuple
 
 import numpy as np
 import pypdf
-from pdf2image import convert_from_path
-from pdf2image.exceptions import PopplerNotInstalledError
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
@@ -69,12 +67,20 @@ def fit_image(image_width, image_height, max_image_width, max_image_height, scal
 
 
 def convert_content_to_images(file_name: str, dpi: int):
-    # load pages as images
+    try:
+        from pdf2image import convert_from_path
+        from pdf2image.exceptions import PopplerNotInstalledError
+    except ImportError:
+        print(
+            "Warning : the --save-as-image and --unselectable options require pdf2image and poppler to be installed. Proceeding without these options. Please refer to the documentation for more information."
+        )
+        return None
+
     try:
         images = convert_from_path(file_name, dpi=dpi, fmt="png", transparent=True)
     except PopplerNotInstalledError:
         print(
-            "Warning : the --save-as-image and --unselectable options require poppler to be installed. Proceeding without these options. Pleaser refer to the documentation for more information."
+            "Warning : the --save-as-image and --unselectable options require poppler to be installed. Proceeding without these options. Please refer to the documentation for more information."
         )
         return None
 
